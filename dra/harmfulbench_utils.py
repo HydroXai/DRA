@@ -3,7 +3,8 @@ import json
 
 # Third-Party Imports
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, LlamaTokenizer
+from accelerate import Accelerator
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 # Local Imports
 from dra.utils import *
@@ -57,10 +58,18 @@ Answer: [/INST]''',
 }
 
 
+
+accelerator = Accelerator()
+quantization_config = BitsAndBytesConfig(
+    load_in_8Bit=True,
+    bnb_8bit_compute_dtype=torch.bfloat16
+)
+
+
 model_path = get_model_path('harmbench')
 
 log_yellow('[*] Loading harmbench...')
-clf = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16, device_map="auto")
+clf = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16, quantization_config=quantization_config, device_map="auto")
 tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, truncation_side="left", padding_side="left")
 log_yellow('[*] Harmbench loaded!')
 
